@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FUGARIA DECK</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        bone: {
+                            50: '#FFFFFF',
+                            100: '#FDFBF7',
+                            200: '#F5F2EB',
+                            300: '#E8E3D8',
+                            400: '#D6CFBF',
+                            700: '#524E48',
+                            800: '#33302B',
+                            900: '#1C1A17'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FDFBF7;
+            color: #1C1A17;
+            font-family: 'JetBrains Mono', monospace;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        textarea::-webkit-scrollbar {
+            width: 3px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #E8E3D8;
+        }
+
+        #danger-bar {
+            transition: width 0.05s linear;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .key-flash {
+            animation: keyPop 0.25s ease-out forwards;
+        }
+
+        @keyframes keyPop {
+            0% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between overflow-hidden select-none bg-bone-100 text-bone-900 text-xs">
+
+    <!-- Barra de peligro / 5 segundos -->
+    <div class="fixed top-0 left-0 w-full h-0.5 bg-bone-200 z-50">
+        <div id="danger-bar" class="h-full bg-bone-900 w-full"></div>
+    </div>
+
+    <!-- Header minimalista -->
+    <header class="w-full max-w-2xl mx-auto px-6 pt-8 flex justify-between items-center text-[10px] tracking-widest uppercase opacity-40 hover:opacity-100 transition-opacity">
+        <div class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-bone-900 inline-block"></span>
+            <span id="header-status">Esperando</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="fullscreen-btn" class="hover:text-bone-900 transition-colors focus:outline-none">
+                [ Pantalla completa ]
+            </button>
+        </div>
+    </header>
+
+    <!-- Vista 1: Configuración -->
+    <main id="setup-view" class="flex-1 max-w-md w-full mx-auto px-6 flex flex-col justify-center items-center text-center fade-in">
+        <h1 class="text-sm font-normal tracking-wider uppercase mb-2 text-bone-900">
+            FUGARIA DECK
+        </h1>
+        <p class="text-[11px] text-bone-700 opacity-60 mb-6 leading-relaxed">
+            Si pausas más de 5 segundos, el texto desaparecerá.
+        </p>
+
+        <!-- Selección de Modo de Visualización -->
+        <div class="w-full mb-5">
+            <label class="block text-[9px] uppercase tracking-widest text-bone-700 mb-2 opacity-50">Modo de visualización</label>
+            <div class="grid grid-cols-2 gap-2 text-[11px]">
+                <button type="button" id="mode-normal-btn" class="mode-opt py-2 border border-bone-300 rounded hover:border-bone-800 transition-colors">
+                    Normal
+                </button>
+                <button type="button" id="mode-danger-btn" class="mode-opt py-2 border border-bone-900 bg-bone-900 text-bone-50 rounded transition-colors">
+                    Peligroso (Oculto)
+                </button>
+            </div>
+            <p id="mode-desc" class="text-[10px] opacity-40 mt-1.5 italic h-4">
+                El texto estará oculto. Solo verás la tecla pulsada.
+            </p>
+        </div>
+
+        <!-- Tipo de Meta: Palabras vs Tiempo -->
+        <div class="w-full mb-5">
+            <label class="block text-[9px] uppercase tracking-widest text-bone-700 mb-2 opacity-50">Tipo de objetivo</label>
+            <div class="grid grid-cols-2 gap-2 text-[11px] mb-3">
+                <button type="button" id="target-type-words" class="target-type-btn py-1.5 border border-bone-900 bg-bone-900 text-bone-50 rounded transition-colors">
+                    Por Palabras
+                </button>
+                <button type="button" id="target-type-time" class="target-type-btn py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors">
+                    Por Tiempo
+                </button>
+            </div>
+
+            <!-- Opciones Por Palabras -->
+            <div id="words-selector-container">
+                <div class="grid grid-cols-4 gap-2 text-[11px] mb-2">
+                    <button type="button" data-val="100" class="val-opt word-opt py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors">100</button>
+                    <button type="button" data-val="250" class="val-opt word-opt py-1.5 border border-bone-900 bg-bone-900 text-bone-50 rounded transition-colors">250</button>
+                    <button type="button" data-val="500" class="val-opt word-opt py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors">500</button>
+                    <button type="button" data-val="1000" class="val-opt word-opt py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors">1000</button>
+                </div>
+                <input type="number" id="custom-val-words" placeholder="Palabras personalizadas..." class="w-full bg-transparent border-b border-bone-300 py-1 text-center text-[11px] focus:outline-none focus:border-bone-900 placeholder:text-bone-300 text-bone-900 transition-colors">
+            </div>
+
+            <!-- Opciones Por Tiempo -->
+            <div id="time-selector-container" class="hidden">
+                <div class="grid grid-cols-4 gap-2 text-[11px] mb-2">
+                    <button type="button" data-val="1" class="val-opt time-opt py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors">1 min</button>
+                    <button type="button" data-val="3" class="val-opt time-opt py-1.5 border border-bone-900 bg-bone-900 text-bone-50 rounded transition-colors">3 min</button>
+                    <button type="button" data-val="5" class="val-opt time-opt py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors">5 min</button>
+                    <button type="button" data-val="10" class="val-opt time-opt py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors">10 min</button>
+                </div>
+                <input type="number" id="custom-val-time" placeholder="Minutos personalizados..." class="w-full bg-transparent border-b border-bone-300 py-1 text-center text-[11px] focus:outline-none focus:border-bone-900 placeholder:text-bone-300 text-bone-900 transition-colors">
+            </div>
+        </div>
+
+        <button id="start-btn" class="mt-2 text-[10px] tracking-widest uppercase border border-bone-900 bg-bone-900 text-bone-50 px-8 py-2.5 rounded hover:bg-transparent hover:text-bone-900 transition-all">
+            Comenzar
+        </button>
+    </main>
+
+    <!-- Vista 2: Escritura -->
+    <main id="writing-view" class="hidden flex-1 max-w-xl w-full mx-auto px-6 my-auto flex flex-col justify-center relative">
+        <div id="key-display-container" class="absolute inset-0 flex items-center justify-center pointer-events-none z-10 hidden">
+            <span id="key-display" class="text-4xl font-light text-bone-900 opacity-0"></span>
+        </div>
+
+        <textarea 
+            id="editor" 
+            placeholder="Empieza a escribir..." 
+            spellcheck="false"
+            class="w-full h-[50vh] bg-transparent resize-none border-none outline-none text-xs leading-relaxed text-bone-900 placeholder:text-bone-300 select-text"
+            autofocus
+        ></textarea>
+    </main>
+
+    <!-- Vista 3: Éxito -->
+    <main id="success-view" class="hidden flex-1 max-w-xl w-full mx-auto px-6 flex flex-col justify-center items-center text-center fade-in">
+        <h2 class="text-sm font-normal uppercase tracking-wider mb-2 text-bone-900">Objetivo Alcanzado</h2>
+        <p class="text-[11px] text-bone-700 opacity-60 mb-6">Tu texto ha sido salvado y revelado con éxito.</p>
+
+        <div class="grid grid-cols-3 gap-4 w-full max-w-xs py-3 border-y border-bone-200 mb-6 text-center">
+            <div>
+                <span class="block text-sm font-medium text-bone-900" id="stat-words">0</span>
+                <span class="text-[9px] uppercase tracking-wider opacity-40">Palabras</span>
+            </div>
+            <div>
+                <span class="block text-sm font-medium text-bone-900" id="stat-time">0m 0s</span>
+                <span class="text-[9px] uppercase tracking-wider opacity-40">Tiempo</span>
+            </div>
+            <div>
+                <span class="block text-sm font-medium text-bone-900" id="stat-wpm">0</span>
+                <span class="text-[9px] uppercase tracking-wider opacity-40">PPM</span>
+            </div>
+        </div>
+
+        <div class="w-full max-w-md bg-bone-200/50 p-4 rounded text-left mb-6 max-h-40 overflow-y-auto border border-bone-300">
+            <p id="revealed-text" class="text-[11px] leading-relaxed select-text whitespace-pre-wrap text-bone-900"></p>
+        </div>
+
+        <div class="flex flex-wrap gap-2 justify-center text-[10px] uppercase tracking-wider">
+            <button id="copy-btn" class="border border-bone-900 bg-bone-900 text-bone-50 px-4 py-2 rounded hover:bg-transparent hover:text-bone-900 transition-colors">
+                Copiar
+            </button>
+            <button id="download-btn" class="border border-bone-300 text-bone-900 px-4 py-2 rounded hover:border-bone-900 transition-colors">
+                Descargar .txt
+            </button>
+            <button id="new-session-success-btn" class="opacity-40 hover:opacity-100 px-3 py-2 transition-opacity">
+                Nueva sesión
+            </button>
+        </div>
+    </main>
+
+    <!-- Vista 4: Fracaso -->
+    <main id="failure-view" class="hidden flex-1 max-w-md w-full mx-auto px-6 flex flex-col justify-center items-center text-center fade-in">
+        <h2 class="text-sm font-normal uppercase tracking-wider mb-2 text-bone-900">Tiempo Agotado</h2>
+        <p class="text-[11px] text-bone-700 opacity-60 mb-6 leading-relaxed">
+            Pausaste demasiado tiempo. El escrito se ha destruido permanentemente.
+        </p>
+
+        <div class="flex flex-col gap-2 w-full max-w-xs">
+            <button id="retry-btn" class="w-full text-[10px] tracking-widest uppercase border border-bone-900 bg-bone-900 text-bone-50 py-2.5 rounded hover:bg-transparent hover:text-bone-900 transition-all">
+                Reintentar
+            </button>
+            <button id="change-opts-btn" class="w-full text-[10px] tracking-widest uppercase border border-bone-300 text-bone-900 py-2.5 rounded hover:border-bone-900 transition-all">
+                Cambiar opciones
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer minimalista -->
+    <footer class="w-full max-w-2xl mx-auto px-6 pb-6 flex justify-between items-end text-[10px] opacity-40">
+        <div id="target-counter-container" class="transition-opacity duration-300 opacity-0">
+            <span id="target-counter-text">0 / 250 palabras</span>
+        </div>
+        <div>
+            <span id="mode-indicator">Peligroso (Oculto)</span>
+        </div>
+    </footer>
+
+    <script>
+        let targetType = 'words';
+        let targetValue = 250;
+        let isDangerousMode = true;
+
+        let dangerInterval = null;
+        let sessionTimerInterval = null;
+        let sessionStartTime = null;
+        let sessionEndTime = null;
+        let isSessionActive = false;
+        let isCompleted = false;
+
+        const TIMEOUT_SECONDS = 5;
+        const DANGER_INTERVAL_MS = 50;
+        let lastKeyPressTime = 0;
+
+        const views = {
+            setup: document.getElementById('setup-view'),
+            writing: document.getElementById('writing-view'),
+            success: document.getElementById('success-view'),
+            failure: document.getElementById('failure-view')
+        };
+
+        const dangerBar = document.getElementById('danger-bar');
+        const editor = document.getElementById('editor');
+        const startBtn = document.getElementById('start-btn');
+        const retryBtn = document.getElementById('retry-btn');
+        const changeOptsBtn = document.getElementById('change-opts-btn');
+        const newSessionSuccessBtn = document.getElementById('new-session-success-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        
+        const targetCounterContainer = document.getElementById('target-counter-container');
+        const targetCounterText = document.getElementById('target-counter-text');
+        const headerStatus = document.getElementById('header-status');
+        const revealedText = document.getElementById('revealed-text');
+        const keyDisplay = document.getElementById('key-display');
+        const keyDisplayContainer = document.getElementById('key-display-container');
+
+        const modeNormalBtn = document.getElementById('mode-normal-btn');
+        const modeDangerBtn = document.getElementById('mode-danger-btn');
+        const modeDesc = document.getElementById('mode-desc');
+        const modeIndicator = document.getElementById('mode-indicator');
+
+        const targetTypeWords = document.getElementById('target-type-words');
+        const targetTypeTime = document.getElementById('target-type-time');
+        const wordsSelectorContainer = document.getElementById('words-selector-container');
+        const timeSelectorContainer = document.getElementById('time-selector-container');
+
+        const wordOpts = document.querySelectorAll('.word-opt');
+        const timeOpts = document.querySelectorAll('.time-opt');
+        const customValWords = document.getElementById('custom-val-words');
+        const customValTime = document.getElementById('custom-val-time');
+
+        modeNormalBtn.addEventListener('click', () => {
+            isDangerousMode = false;
+            modeNormalBtn.className = 'mode-opt py-2 border border-bone-900 bg-bone-900 text-bone-50 rounded transition-colors';
+            modeDangerBtn.className = 'mode-opt py-2 border border-bone-300 rounded hover:border-bone-800 transition-colors';
+            modeDesc.textContent = 'El texto será visible mientras escribes.';
+            modeIndicator.textContent = 'Normal';
+        });
+
+        modeDangerBtn.addEventListener('click', () => {
+            isDangerousMode = true;
+            modeDangerBtn.className = 'mode-opt py-2 border border-bone-900 bg-bone-900 text-bone-50 rounded transition-colors';
+            modeNormalBtn.className = 'mode-opt py-2 border border-bone-300 rounded hover:border-bone-800 transition-colors';
+            modeDesc.textContent = 'El texto estará oculto. Solo verás la tecla pulsada.';
+            modeIndicator.textContent = 'Peligroso (Oculto)';
+        });
+
+        targetTypeWords.addEventListener('click', () => {
+            targetType = 'words';
+            targetTypeWords.className = 'target-type-btn py-1.5 border border-bone-900 bg-bone-900 text-bone-50 rounded transition-colors';
+            targetTypeTime.className = 'target-type-btn py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors';
+            wordsSelectorContainer.classList.remove('hidden');
+            timeSelectorContainer.classList.add('hidden');
+            targetValue = 250;
+        });
+
+        targetTypeTime.addEventListener('click', () => {
+            targetType = 'time';
+            targetTypeTime.className = 'target-type-btn py-1.5 border border-bone-900 bg-bone-900 text-bone-50 rounded transition-colors';
+            targetTypeWords.className = 'target-type-btn py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors';
+            timeSelectorContainer.classList.remove('hidden');
+            wordsSelectorContainer.classList.add('hidden');
+            targetValue = 3;
+        });
+
+        wordOpts.forEach(opt => {
+            opt.addEventListener('click', () => {
+                wordOpts.forEach(o => o.className = 'val-opt word-opt py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors');
+                opt.className = 'val-opt word-opt py-1.5 border border-bone-900 bg-bone-900 text-bone-50 rounded transition-colors';
+                targetValue = parseInt(opt.getAttribute('data-val'));
+                customValWords.value = '';
+            });
+        });
+
+        customValWords.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if (!isNaN(val) && val > 0) {
+                wordOpts.forEach(o => o.className = 'val-opt word-opt py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors');
+                targetValue = val;
+            }
+        });
+
+        timeOpts.forEach(opt => {
+            opt.addEventListener('click', () => {
+                timeOpts.forEach(o => o.className = 'val-opt time-opt py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors');
+                opt.className = 'val-opt time-opt py-1.5 border border-bone-900 bg-bone-900 text-bone-50 rounded transition-colors';
+                targetValue = parseInt(opt.getAttribute('data-val'));
+                customValTime.value = '';
+            });
+        });
+
+        customValTime.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if (!isNaN(val) && val > 0) {
+                timeOpts.forEach(o => o.className = 'val-opt time-opt py-1.5 border border-bone-300 rounded hover:border-bone-800 transition-colors');
+                targetValue = val;
+            }
+        });
+
+        function switchView(targetView) {
+            Object.keys(views).forEach(key => {
+                if (key === targetView) {
+                    views[key].classList.remove('hidden');
+                    views[key].classList.add('fade-in');
+                } else {
+                    views[key].classList.add('hidden');
+                    views[key].classList.remove('fade-in');
+                }
+            });
+        }
+
+        function startSession() {
+            isSessionActive = true;
+            isCompleted = false;
+            editor.value = '';
+            
+            if (targetType === 'words') {
+                targetCounterText.textContent = `0 / ${targetValue} palabras`;
+            } else {
+                const totalSecs = targetValue * 60;
+                const m = Math.floor(totalSecs / 60);
+                const s = totalSecs % 60;
+                targetCounterText.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')} restantes`;
+            }
+
+            if (isDangerousMode) {
+                editor.classList.add('opacity-0');
+                keyDisplayContainer.classList.remove('hidden');
+            } else {
+                editor.classList.remove('opacity-0');
+                keyDisplayContainer.classList.add('hidden');
+            }
+
+            switchView('writing');
+            targetCounterContainer.classList.remove('opacity-0');
+            headerStatus.textContent = isDangerousMode ? 'Escribiendo (A ciegas)' : 'Escribiendo';
+
+            resetDangerBar();
+            sessionStartTime = null;
+
+            setTimeout(() => {
+                editor.focus();
+            }, 100);
+        }
+
+        function resetDangerBar() {
+            dangerBar.style.width = '100%';
+            dangerBar.style.backgroundColor = '#1C1A17';
+        }
+
+        editor.addEventListener('keydown', (e) => {
+            if (!isSessionActive || isCompleted) return;
+
+            if (isDangerousMode && e.key.length === 1) {
+                keyDisplay.textContent = e.key === ' ' ? '␣' : e.key;
+                keyDisplay.classList.remove('key-flash');
+                void keyDisplay.offsetWidth;
+                keyDisplay.classList.add('key-flash');
+            }
+        });
+
+        editor.addEventListener('input', handleTyping);
+
+        function handleTyping() {
+            if (!isSessionActive || isCompleted) return;
+
+            if (!sessionStartTime) {
+                sessionStartTime = new Date();
+                startDangerTimer();
+
+                if (targetType === 'time') {
+                    startTimeGoalTimer();
+                }
+            }
+
+            lastKeyPressTime = Date.now();
+            resetDangerBar();
+
+            const words = countWords(editor.value);
+            
+            if (targetType === 'words') {
+                targetCounterText.textContent = `${words} / ${targetValue} palabras`;
+                if (words >= targetValue) {
+                    completeSession();
+                }
+            }
+        }
+
+        function countWords(str) {
+            const trimmed = str.trim();
+            if (!trimmed) return 0;
+            return trimmed.split(/\s+/).filter(w => w.length > 0).length;
+        }
+
+        function startTimeGoalTimer() {
+            if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+
+            const totalDurationMs = targetValue * 60 * 1000;
+
+            sessionTimerInterval = setInterval(() => {
+                if (!isSessionActive || isCompleted || !sessionStartTime) return;
+
+                const elapsed = Date.now() - sessionStartTime;
+                const remaining = totalDurationMs - elapsed;
+
+                if (remaining <= 0) {
+                    clearInterval(sessionTimerInterval);
+                    targetCounterText.textContent = `00:00 restantes`;
+                    completeSession();
+                } else {
+                    const totalSecs = Math.ceil(remaining / 1000);
+                    const m = Math.floor(totalSecs / 60);
+                    const s = totalSecs % 60;
+                    targetCounterText.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')} restantes`;
+                }
+            }, 500);
+        }
+
+        function startDangerTimer() {
+            if (dangerInterval) clearInterval(dangerInterval);
+
+            dangerInterval = setInterval(() => {
+                if (!isSessionActive || isCompleted || !sessionStartTime) return;
+
+                const elapsedSinceLastKey = Date.now() - lastKeyPressTime;
+                const remainingTime = (TIMEOUT_SECONDS * 1000) - elapsedSinceLastKey;
+                const percentage = Math.max(0, (remainingTime / (TIMEOUT_SECONDS * 1000)) * 100);
+
+                dangerBar.style.width = `${percentage}%`;
+
+                if (remainingTime < 2000) {
+                    dangerBar.style.backgroundColor = '#C86D61';
+                } else {
+                    dangerBar.style.backgroundColor = '#1C1A17';
+                }
+
+                if (remainingTime <= 0) {
+                    failSession();
+                }
+            }, DANGER_INTERVAL_MS);
+        }
+
+        function failSession() {
+            isSessionActive = false;
+            clearInterval(dangerInterval);
+            if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+            dangerBar.style.width = '0%';
+
+            editor.value = '';
+            targetCounterContainer.classList.add('opacity-0');
+            headerStatus.textContent = 'Fallado';
+
+            switchView('failure');
+        }
+
+        function completeSession() {
+            isSessionActive = false;
+            isCompleted = true;
+            sessionEndTime = new Date();
+            clearInterval(dangerInterval);
+            if (sessionTimerInterval) clearInterval(sessionTimerInterval);
+
+            resetDangerBar();
+
+            const totalWords = countWords(editor.value);
+            const durationInSeconds = Math.max(1, Math.round((sessionEndTime - sessionStartTime) / 1000));
+            const minutes = durationInSeconds / 60;
+            const wpm = Math.round(totalWords / minutes) || 0;
+
+            const m = Math.floor(durationInSeconds / 60);
+            const s = durationInSeconds % 60;
+            const timeFormatted = `${m}m ${s}s`;
+
+            document.getElementById('stat-words').textContent = totalWords;
+            document.getElementById('stat-time').textContent = timeFormatted;
+            document.getElementById('stat-wpm').textContent = wpm;
+
+            revealedText.textContent = editor.value;
+
+            targetCounterContainer.classList.add('opacity-0');
+            headerStatus.textContent = 'Completado';
+
+            switchView('success');
+        }
+
+        copyBtn.addEventListener('click', () => {
+            const text = editor.value;
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                const origText = copyBtn.textContent;
+                copyBtn.textContent = '¡Copiado!';
+                setTimeout(() => {
+                    copyBtn.textContent = origText;
+                }, 2000);
+            } catch (err) {
+                console.error('Error al copiar:', err);
+            }
+            document.body.removeChild(textArea);
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            const text = editor.value;
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `fugaria-${new Date().toISOString().slice(0,10)}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error al activar pantalla completa: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        startBtn.addEventListener('click', startSession);
+        retryBtn.addEventListener('click', startSession);
+        changeOptsBtn.addEventListener('click', () => {
+            switchView('setup');
+            resetDangerBar();
+        });
+        newSessionSuccessBtn.addEventListener('click', () => {
+            switchView('setup');
+            resetDangerBar();
+        });
+
+        window.addEventListener('beforeunload', (e) => {
+            if (isSessionActive && editor.value.trim().length > 0 && !isCompleted) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>
